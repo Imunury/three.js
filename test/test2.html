@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Hello, World!</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.js" integrity="sha512-NLtnLBS9Q2w7GKK9rKxdtgL7rA7CAS85uC/0xd9im4J/yOL4F9ZVlv634NAM7run8hz3wI2GabaA6vv8vJtHiQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <style>
+            body {
+                color: #61443e;
+                font-family:Monospace;
+                font-size:13px;
+                text-align:center;
+
+                background-color: #aaccff;
+                margin: 0px;
+                overflow: hidden;
+            }
+
+            #info {
+                color: #ffffff;
+                position: absolute;
+                top: 0px; width: 100%;
+                padding: 5px;
+            }
+
+            a {
+                color: yellow;
+            }
+
+            #oldie {
+                background:rgb(0,0,50) !important;
+                color:#fff !important;
+            }
+        </style>
+    </head>
+    <body>
+        <div id='info'></div>
+        <script>
+        /*
+            *    Simple Three.js Template
+            *    @author mand http://mandemeskel.wordpress.com/
+            */
+            var WIDTH = window.innerWidth,
+                HEIGHT = window.innerHeight,
+                ASPECT = WIDTH / HEIGHT,
+                VIEW_ANGLE = 90, NEAR = 0.1, FAR = 10000;
+                        var clock = new THREE.Clock();
+
+            var contianer, renderer, camera, scene, sphere, ocean;
+
+            //mouse event variables
+            var mouse_vector = new THREE.Vector3(),
+                mouse = { x: 0, y: 0, z: 1 },
+                ray = new THREE.Raycaster( new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0) ),
+                intersects = [];
+            var worldWidth = 128, worldDepth = 128,
+                worldHalfWidth = worldWidth / 2, worldHalfDepth = worldDepth / 2;
+
+            var last = null;
+            function myalert(val){
+                var a=document.getElementById('info');
+                a.innerText = val;
+                clearTimeout(last);
+                last=setTimeout(function(){a.innerText="";},1000)
+            }
+
+            function init() {
+                var directionalLight;
+
+                //div element that will hold renderer
+                container = document.createElement('div');
+                document.body.appendChild(container);
+
+                //renderer
+                renderer = new THREE.WebGLRenderer();
+                renderer.setSize(WIDTH, HEIGHT);
+                container.appendChild(renderer.domElement);
+
+                //camera
+                camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+                camera.position.y = 200;
+                camera.position.z = 500;
+
+                //lights
+                directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+                directionalLight.position.set(0, -1, 0);
+
+
+                //set up sphere object, just for testing
+                var sphereMaterial = new THREE.MeshLambertMaterial({
+                    color: 0x004242
+                });
+                sphere = new THREE.Mesh(new THREE.SphereGeometry(50, 16, 16),
+                sphereMaterial);
+
+                //create the scene and add the objects that we created
+                scene = new THREE.Scene();
+                scene.add(camera);
+                scene.add(directionalLight);
+                scene.add(sphere);
+
+
+                geometry = new THREE.PlaneGeometry( 2000, 2000, worldWidth - 1, worldDepth - 1 );
+                geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
+                geometry.dynamic = true;
+                
+                
+                material = new THREE.MeshBasicMaterial( { color: 0x0044ff} );
+                material.wireframe = true;
+                ocean = new THREE.Mesh( geometry, material );
+                scene.add( ocean );
+            
+
+                //we add the even listener function to the domElement
+                renderer.domElement.addEventListener( 'mousedown', onMouseDown );
+            }
+
+            function animate() {
+                var delta = clock.getDelta(),
+                    time = clock.getElapsedTime() * 10;
+                
+                ocean.geometry.verticesNeedUpdate = true;
+
+                requestAnimationFrame(animate);
+                renderer.render(scene, camera);
+
+            }
+
+            //event listener
+            function onMouseDown( event_info ) {
+                //stop any other event listener from recieving this event
+                event_info.preventDefault();
+
+                //this where begin to transform the mouse cordinates to three,js cordinates
+                mouse.x = ( event_info.clientX / window.innerWidth ) * 2 - 1;
+                mouse.y = - ( event_info.clientY / window.innerHeight ) * 2 + 1;
+
+                //this vector caries the mouse click cordinates
+                mouse_vector.set( mouse.x, mouse.y, mouse.z );
+
+                //the final step of the transformation process, basically this method call
+                //creates a point in 3d space where the mouse click occurd
+                mouse_vector.unproject( camera );
+
+                var direction = mouse_vector.sub( camera.position ).normalize();
+
+                //ray = new THREE.Raycaster( camera.position, direction );
+                ray.set( camera.position, direction );
+
+                //asking the raycaster if the mouse click touched the sphere or ocean object
+                intersects = ray.intersectObjects( [ sphere, ocean ] );
+
+                //the ray will return an array with length of 1 or greater if the mouse click
+                //does touch the sphere object
+                if( intersects.length ) {
+                    if (intersects[0].object === sphere)
+                        myalert( "hit" );
+                    else{
+                        myalert( "hit bg");
+                        myalert(intersects[0].point.toArray());
+                    }
+                }
+                
+                
+            }
+
+            function onMouseMove( event_info ) {
+            }
+
+            function onMouseUp( event_info ) {
+            }
+
+            init();
+            animate();
+        </script>
+    </body>
+</html>
